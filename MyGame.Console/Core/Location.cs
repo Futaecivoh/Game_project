@@ -1,1 +1,4 @@
-class Location;
+class Location
+{
+    
+}

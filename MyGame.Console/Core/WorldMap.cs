@@ -1,1 +1,4 @@
-class WorldMap;
+class WorldMap
+{
+    
+}
