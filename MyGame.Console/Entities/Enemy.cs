@@ -1,1 +1,4 @@
-class Enemy;
+class Enemy
+{
+    
+}

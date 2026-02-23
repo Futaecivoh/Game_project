@@ -1,1 +1,4 @@
-abstract class Creature;
+abstract class Creature
+{
+    
+}
