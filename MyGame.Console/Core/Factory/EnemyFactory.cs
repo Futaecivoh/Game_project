@@ -1,4 +1,4 @@
-class EnemyFactory : CreatureFactory
+public class EnemyFactory : CreatureFactory
 {
     public override Creature CreateCreature(string name)
     {

@@ -1,8 +1,8 @@
-class Enemy : Creature
+public class Enemy : Creature
 {
     public override void Action()
     {
-        Console.WriteLine($"{Name} готово к игре");
+        Console.WriteLine($"{Name} Хочет ударить противника");
     }
 }
 

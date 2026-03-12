@@ -1,8 +1,8 @@
-class Player : Creature
+public class Player : Creature
 {
     public override void Action()
     {
-        Console.WriteLine($"{Name} готово к игре");
+        Console.WriteLine($"{Name} Защищается и ждем команд");
     }
 }
 
