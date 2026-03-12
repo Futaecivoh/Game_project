@@ -1,12 +1,8 @@
 class Player : Creature
 {
-    public Player(string name, int hp)
+    public override void Action()
     {
-        Name = name;
-        Hp = hp;
-    }
-    public override void Move()
-    {
-        Console.WriteLine($"[Игрок] {Name} Смело делает шаг вперед");
+        Console.WriteLine($"{Name} готово к игре");
     }
 }
+

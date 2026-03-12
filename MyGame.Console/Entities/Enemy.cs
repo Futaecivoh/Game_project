@@ -1,18 +1,8 @@
-public class Enemy : Creature
+class Enemy : Creature
 {
-    public Enemy(string name, int hp)
+    public override void Action()
     {
-        Name = name;
-        Hp = hp;
-    }
-
-    public override void Move()
-    {
-        Console.WriteLine($"[Враг] {Name} Враг типо");
-    }
-
-    public void Attack()
-    {
-        Console.WriteLine($"{Name} атакует!");
+        Console.WriteLine($"{Name} готово к игре");
     }
 }
+
