@@ -43,7 +43,23 @@ public enum Difficulty
         Console.WriteLine($"- Сложность: {CurrentDifficulty}");
         Console.WriteLine("============================");
         Console.WriteLine("Press Esc to exit.");
-        Console.WriteLine("Alexander is Gay");
+
+        List<CreatureFactory> factories = new List<CreatureFactory>
+        {
+            new PlayerFactory(),
+            new EnemyFactory()
+        };
+
+        Console.WriteLine("...");
+        Console.WriteLine("...");
+        Console.WriteLine("...");
+        Console.WriteLine("=== Генерация мобов ===");
+
+        foreach (var factory in factories)
+        {
+            Creature unit = factory.CreateCreature("Существо " + factory.GetType().Name);
+            unit.Action();
+        }
 
         while (isRunning)
         {
