@@ -3,10 +3,17 @@ using System.Threading;
 
 public class GameManager
 {
-    
+    private int MapHeight;
+    private int MapWidth;
+    public Difficulty CurrentDifficulty;
     private static GameManager _instance;
 
-    private GameManager() { }
+    private GameManager()
+    {
+        MapHeight = 200;
+        MapWidth = 200;
+        CurrentDifficulty = Difficulty.Medium;
+    }
 
     public static GameManager Instance
     {
@@ -21,7 +28,10 @@ public class GameManager
         }
     }
 
-    
+public enum Difficulty
+    {
+        Hard, Medium, Easy
+    }
     private bool isRunning = true;
 
     public void Run()
