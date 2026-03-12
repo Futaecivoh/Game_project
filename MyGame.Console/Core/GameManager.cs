@@ -6,7 +6,7 @@ public class GameManager
     private int MapHeight;
     private int MapWidth;
     public Difficulty CurrentDifficulty;
-    private static GameManager _instance;
+    private static GameManager? _instance;
 
     private GameManager()
     {
@@ -36,7 +36,14 @@ public enum Difficulty
 
     public void Run()
     {
-        Console.WriteLine("Welcome to the game! Press Esc to exit.");
+        Console.WriteLine("=== Welcome to the game! ===");
+        Console.WriteLine($"Настройки загружены:");
+        Console.WriteLine($"- Ширина карты: {MapWidth}");
+        Console.WriteLine($"- Высота карты: {MapHeight}");
+        Console.WriteLine($"- Сложность: {CurrentDifficulty}");
+        Console.WriteLine("============================");
+        Console.WriteLine("Press Esc to exit.");
+        Console.WriteLine("Alexander is Gay");
 
         while (isRunning)
         {
