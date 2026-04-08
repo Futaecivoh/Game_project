@@ -3,8 +3,8 @@ using System.Threading;
 
 public class GameManager
 {
-    private int MapHeight;
-    private int MapWidth;
+    public int MapHeight;
+    public int MapWidth;
     public Difficulty CurrentDifficulty;
     private static GameManager? _instance;
 
@@ -52,9 +52,17 @@ public void Run()
             .SetStartLocation(1)
             .Build();
 
+        Boss boss = new BossBuilder()
+            .SetName("Dragon")
+            .SetHealth(500)
+            .AddBossBodyPart("Head", 2.0f)
+            .AddBossBodyPart("Body", 1.0f)
+            .AddBossBodyPart("Tail", 1.5f)
+            .Build();
+
         Console.WriteLine($"Карта '{map.MapName}' готовченко!\n");
 
-        Location currentLocation = map.StartNode;
+        Location currentLocation = map.StartNode!;
         currentLocation.Enter();
 
         while (isRunning)
@@ -74,7 +82,7 @@ public void Run()
             }
             Console.WriteLine("[0] -> Выйти из игры");
 
-            string input = Console.ReadLine();
+            string? input = Console.ReadLine();
             
             if (input == "0")
             {
@@ -95,6 +103,17 @@ public void Run()
 
         Console.WriteLine("Goodbye!");
     }
+
+    public void DealDamage(Boss boss, string partName, int baseDamage)
+        {
+            var part = boss.BossBodyParts.FirstOrDefault(p => p.Name == partName);
+
+            if (part != null)
+            {
+                int finalDamage = (int)(baseDamage * part.DamageMultiplier);
+                boss.Health -= finalDamage;
+            }
+        }
 
     private void Update()
     {
