@@ -1,6 +1,6 @@
 public class BossBuilder
 {
-    private string _name;
+    private string? _name;
     private int _health;
     private List<BossBodyPart> _bossbodyParts = new List<BossBodyPart>();
 
