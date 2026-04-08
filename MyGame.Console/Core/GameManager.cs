@@ -3,10 +3,15 @@ using System.Threading;
 
 public class GameManager
 {
-    public int MapHeight;
-    public int MapWidth;
-    public Difficulty CurrentDifficulty;
+    public int MapHeight { get; private set; }
+    public int MapWidth { get; private set; }
+    public Difficulty CurrentDifficulty { get; private set; }
+    
+    public Player MainPlayer { get; private set; } = new Player();
+
     private static GameManager? _instance;
+    
+    private IRandomProvider _random = new RNJesusAdapter();
 
     private GameManager()
     {
@@ -19,7 +24,6 @@ public class GameManager
     {
         get
         {
-        
             if (_instance == null)
             {
                 _instance = new GameManager();
@@ -41,7 +45,7 @@ public class GameManager
         
         MapBuilder builder = new MapBuilder();
         WorldMap map = builder
-            .SetMapName("Акт 1: дремучий хуй")
+            .SetMapName("Акт 1: Темный лес")
             .AddLocation(1, "Старт", "Start")
             .AddLocation(2, "Засада врагов", "Enemy")
             .AddLocation(3, "Артефакты", "Event")
@@ -61,18 +65,34 @@ public class GameManager
             .AddBossBodyPart("Tail", 1.5f)
             .Build();
 
-
         var bossLocation = map.Locations.Values
             .FirstOrDefault(l => l.Type == "Boss");
 
-        if (bossLocation != null)
+        if (bossLocation == null)
         {
-            bossLocation.Boss = boss;
+            Console.WriteLine("Ошибка: локация босса не найдена");
+            return;
         }
+
+        bossLocation.Boss = boss;
+
+        
+        
+        MainPlayer = new Player();
+
+        var weapon = MainPlayer.EquippedWeapon;
+        Console.WriteLine($"Вы начинаете путь. В руках у вас: {weapon.GetDescription()} " +
+                          $"(Урон: {weapon.GetDamage()})");
 
         Console.WriteLine($"Карта '{map.MapName}' готовченко!\n");
 
-        Location currentLocation = map.StartNode!;
+        if (map.StartNode == null)
+        {
+            Console.WriteLine("Ошибка: нет стартовой локации");
+            return;
+        }
+
+        Location currentLocation = map.StartNode;
         currentLocation.Enter();
 
         while (isRunning)
@@ -107,9 +127,10 @@ public class GameManager
                 currentLocation = currentLocation.ConnectedLocations[choice - 1];
                 currentLocation.Enter();
 
+                
                 if (currentLocation.Type == "Boss" && currentLocation.Boss != null)
                 {
-                    HandleBossFight(currentLocation.Boss);
+                    HandleBossFight(MainPlayer, currentLocation.Boss);
                 }
             }
             else
@@ -121,9 +142,12 @@ public class GameManager
         Console.WriteLine("Goodbye!");
     }
 
-    private void HandleBossFight(Boss boss)
+    private void HandleBossFight(Player player, Boss boss)
     {
-        while (boss.Health > 0)
+        Console.WriteLine($"\nВЫ ВОШЛИ В ЛОГОВО БОССА: {boss.Name}!");
+        Console.WriteLine($"У босса {boss.Health} ХП. Ваше ХП: {player.Health}");
+        
+        while (boss.Health > 0 && player.Health > 0)
         {
             Console.WriteLine("\nКуда ударим?");
             
@@ -135,40 +159,77 @@ public class GameManager
 
             string? input = Console.ReadLine();
 
-            if (int.TryParse(input, out int choice) &&
-                choice > 0 &&
-                choice <= boss.BossBodyParts.Count)
+            if (int.TryParse(input, out int choice) && choice > 0 && choice <= boss.BossBodyParts.Count)
             {
-                var selectedPart = boss.BossBodyParts[choice - 1];
+                var targetPart = boss.BossBodyParts[choice - 1];
 
-                DealDamage(boss, selectedPart.Name, 50);
+                
+                bool hit = _random.Roll(GameBalance.HitChance);
 
-                Console.WriteLine($"Вы ударили в {selectedPart.Name}!");
-                Console.WriteLine($"HP босса: {boss.Health}");
+                BossBodyPart actualPart;
+
+                if (hit)
+                {
+                    actualPart = targetPart;
+                    Console.WriteLine("\n🎯 Попадание!");
+                }
+                else
+                {
+                   
+                    int index = _random.Range(0, boss.BossBodyParts.Count - 1);
+                    actualPart = boss.BossBodyParts[index];
+                    Console.WriteLine($"\n💨 Промах! Оружие соскользнуло и попало в: {actualPart.Name}");
+                }
+                
+                int currentDamage = player.EquippedWeapon.GetDamage();
+                
+                DealDamage(boss, actualPart.Name, currentDamage);
+
+                Console.WriteLine($"Вы ударили оружием '{player.EquippedWeapon.GetDescription()}'!");
+                Console.WriteLine($"Осталось HP босса: {boss.Health}");
+                
+                if (!hit && boss.Health > 0)
+                {
+                    int bossDamage = _random.Range(GameBalance.BossMinDamage, GameBalance.BossMaxDamage);
+                    Console.WriteLine($"\n⚠️ Босс в ярости от вашей ошибки и атакует в ответ!");
+                    
+                    
+                    player.Health -= bossDamage; 
+                    Console.WriteLine($"Вы получили {bossDamage} урона! Ваше здоровье: {player.Health}");
+                }
             }
             else
             {
                 Console.WriteLine("Неверный выбор.");
             }
         }
-
-        Console.WriteLine($"🎉 Босс {boss.Name} побежден!");
+       
+        if (player.Health <= 0)
+        {
+            Console.WriteLine("\n💀 Вы погибли в бою с боссом... Игра окончена.");
+        }
+        else
+        {
+            Console.WriteLine($"\n🎉 Босс {boss.Name} побежден!");
+        }
+        
+        isRunning = false;
     }
 
     public void DealDamage(Boss boss, string partName, int baseDamage)
-    {
-        var part = boss.BossBodyParts.FirstOrDefault(p => p.Name == partName);
+        {
+            var part = boss.BossBodyParts.FirstOrDefault(p => p.Name == partName);
 
-        if (part != null)
-        {
-            int finalDamage = (int)(baseDamage * part.DamageMultiplier);
-            boss.Health -= finalDamage;
+            if (part != null)
+            {
+                int finalDamage = (int)(baseDamage * part.DamageMultiplier);
+                boss.Health -= finalDamage;
+            }
+            if (boss.Health < 0)
+            {
+                boss.Health = 0;
+            }
         }
-        if (boss.Health < 0)
-        {
-            boss.Health = 0;
-        }
-    }
 
     private void Update()
     {
