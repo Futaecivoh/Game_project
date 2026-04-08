@@ -34,51 +34,63 @@ public enum Difficulty
     }
     private bool isRunning = true;
 
-    public void Run()
+public void Run()
     {
-        Console.WriteLine("=== Welcome to the game! ===");
-        Console.WriteLine($"Настройки загружены:");
-        Console.WriteLine($"- Ширина карты: {MapWidth}");
-        Console.WriteLine($"- Высота карты: {MapHeight}");
-        Console.WriteLine($"- Сложность: {CurrentDifficulty}");
-        Console.WriteLine("============================");
-        Console.WriteLine("Press Esc to exit.");
+        Console.WriteLine("=== Welcome to the Card Game! ===");
+        
+        MapBuilder builder = new MapBuilder();
+        WorldMap map = builder
+            .SetMapName("Акт 1: дремучий хуй")
+            .AddLocation(1, "Старт", "Start")
+            .AddLocation(2, "Засада врагов", "Enemy")
+            .AddLocation(3, "Артефакты", "Event")
+            .AddLocation(4, "Босс", "Boss")
+            .Connect(1, 2)
+            .Connect(1, 3)
+            .Connect(2, 4)
+            .Connect(3, 4)
+            .SetStartLocation(1)
+            .Build();
 
-        List<CreatureFactory> factories = new List<CreatureFactory>
-        {
-            new PlayerFactory(),
-            new EnemyFactory()
-        };
+        Console.WriteLine($"Карта '{map.MapName}' готовченко!\n");
 
-        Console.WriteLine("...");
-        Console.WriteLine("...");
-        Console.WriteLine("...");
-        Console.WriteLine("=== Генерация мобов ===");
-
-        foreach (var factory in factories)
-        {
-            Creature unit = factory.CreateCreature("Существо " + factory.GetType().Name);
-            unit.Action();
-        }
+        Location currentLocation = map.StartNode;
+        currentLocation.Enter();
 
         while (isRunning)
         {
-            if (Console.KeyAvailable)
+            Console.WriteLine("\nКуда отправимся дальше? (Выберите номер)");
+            
+            if (currentLocation.ConnectedLocations.Count == 0)
             {
-                var key = Console.ReadKey(true).Key;
-                if (key == ConsoleKey.Escape)
-                {
-                    isRunning = false;
-                }
+                Console.WriteLine("Дальше пути нет. Конец Акта 1!");
+                break;
             }
 
-            if (isRunning)
+            for (int i = 0; i < currentLocation.ConnectedLocations.Count; i++)
             {
-                Update();
-                Data();
+                var nextLoc = currentLocation.ConnectedLocations[i];
+                Console.WriteLine($"[{i + 1}] -> {nextLoc.Name} ({nextLoc.Type})");
+            }
+            Console.WriteLine("[0] -> Выйти из игры");
+
+            string input = Console.ReadLine();
+            
+            if (input == "0")
+            {
+                isRunning = false;
+                break;
             }
 
-            Thread.Sleep(16);
+            if (int.TryParse(input, out int choice) && choice > 0 && choice <= currentLocation.ConnectedLocations.Count)
+            {
+                currentLocation = currentLocation.ConnectedLocations[choice - 1];
+                currentLocation.Enter();
+            }
+            else
+            {
+                Console.WriteLine("Неверный выбор, попробуйте еще раз.");
+            }
         }
 
         Console.WriteLine("Goodbye!");
