@@ -3,6 +3,13 @@ public class Player : Creature
     public int Level { get; set; } = 1;
     public IWeapon EquippedWeapon { get; set; }
 
+    public Player()
+    {
+        Name = "Кирильченко";
+        Health = GameBalance.PlayerStartHealth;
+        EquippedWeapon = new BasicSword(GameBalance.PlayerBaseDamage);
+    }
+
     public override void Action()
     {
         Console.WriteLine($"{Name} Душнит насчет D&D. Оружие: {EquippedWeapon.GetDescription()}"
@@ -21,9 +28,4 @@ public class Player : Creature
         Console.WriteLine($"Игрок получил опыт! Уровень: {Level}");
     }
 
-    public Player()
-    {
-        Name = "Кирильченко";
-        EquippedWeapon = new BasicSword(GameBalance.PlayerBaseDamage);
-    }
 }

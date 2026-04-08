@@ -7,7 +7,7 @@ public class GameManager
     public int MapWidth { get; private set; }
     public Difficulty CurrentDifficulty { get; private set; }
     
-    public Player MainPlayer { get; private set; }
+    public Player MainPlayer { get; private set; } = new Player();
 
     private static GameManager? _instance;
     
@@ -78,12 +78,7 @@ public class GameManager
 
         
         
-        MainPlayer = new Player 
-        { 
-            Name = "Hero", 
-            Health = GameBalance.PlayerStartHealth,
-            EquippedWeapon = new BasicSword(50) 
-        };
+        MainPlayer = new Player();
 
         var weapon = MainPlayer.EquippedWeapon;
         Console.WriteLine($"Вы начинаете путь. В руках у вас: {weapon.GetDescription()} " +
