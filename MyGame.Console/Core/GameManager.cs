@@ -7,12 +7,15 @@ public class GameManager
     public int MapWidth;
     public Difficulty CurrentDifficulty;
     private static GameManager? _instance;
+    private IRandomProvider _random;
 
     private GameManager()
     {
         MapHeight = 200;
         MapWidth = 200;
         CurrentDifficulty = Difficulty.Medium;
+
+        _random = new RNJesusAdapter();
     }
 
     public static GameManager Instance
@@ -65,14 +68,29 @@ public class GameManager
         var bossLocation = map.Locations.Values
             .FirstOrDefault(l => l.Type == "Boss");
 
-        if (bossLocation != null)
+        if (bossLocation == null)
         {
-            bossLocation.Boss = boss;
+            Console.WriteLine("Ошибка: локация босса не найдена");
+            return;
         }
+
+        bossLocation.Boss = boss;
+
+        Player player = new Player 
+        { 
+            Name = "Hero", 
+            Health = GameBalance.PlayerStartHealth 
+        };
 
         Console.WriteLine($"Карта '{map.MapName}' готовченко!\n");
 
-        Location currentLocation = map.StartNode!;
+        if (map.StartNode == null)
+        {
+            Console.WriteLine("Ошибка: нет стартовой локации");
+            return;
+        }
+
+        Location currentLocation = map.StartNode;
         currentLocation.Enter();
 
         while (isRunning)
@@ -109,7 +127,7 @@ public class GameManager
 
                 if (currentLocation.Type == "Boss" && currentLocation.Boss != null)
                 {
-                    HandleBossFight(currentLocation.Boss);
+                    HandleBossFight(player, currentLocation.Boss);
                 }
             }
             else
@@ -121,7 +139,7 @@ public class GameManager
         Console.WriteLine("Goodbye!");
     }
 
-    private void HandleBossFight(Boss boss)
+    private void HandleBossFight(Player player, Boss boss)
     {
         while (boss.Health > 0)
         {
@@ -139,12 +157,37 @@ public class GameManager
                 choice > 0 &&
                 choice <= boss.BossBodyParts.Count)
             {
-                var selectedPart = boss.BossBodyParts[choice - 1];
+                var targetPart = boss.BossBodyParts[choice - 1];
 
-                DealDamage(boss, selectedPart.Name, 50);
+                bool hit = _random.Roll(GameBalance.HitChance);
 
-                Console.WriteLine($"Вы ударили в {selectedPart.Name}!");
-                Console.WriteLine($"HP босса: {boss.Health}");
+                BossBodyPart actualPart;
+
+                if (hit)
+                {
+                    actualPart = targetPart;
+                    Console.WriteLine("Попадание!");
+                    Console.WriteLine($"HP босса: {boss.Health}");
+                }
+                else
+                {
+                    int index = _random.Range(0, boss.BossBodyParts.Count);
+                    actualPart = boss.BossBodyParts[index];
+                    Console.WriteLine($"Промах! Попали в {actualPart.Name}");
+                    Console.WriteLine($"HP босса: {boss.Health}");
+                    if (boss.Health > 0)
+                    {
+                        int bossDamage = _random.Range(
+                            GameBalance.BossMinDamage, 
+                            GameBalance.BossMaxDamage
+                        );
+                        Console.WriteLine("Босс атакует!");
+                        player.TakeDamage(bossDamage);
+                    }
+                }
+
+                int damage = (int)(GameBalance.PlayerBaseDamage * actualPart.DamageMultiplier);
+                DealDamage(boss, damage);
             }
             else
             {
@@ -152,22 +195,12 @@ public class GameManager
             }
         }
 
-        Console.WriteLine($"🎉 Босс {boss.Name} побежден!");
+        Console.WriteLine($"Босс {boss.Name} побежден!");
     }
 
-    public void DealDamage(Boss boss, string partName, int baseDamage)
+    public void DealDamage(Creature target, int damage)
     {
-        var part = boss.BossBodyParts.FirstOrDefault(p => p.Name == partName);
-
-        if (part != null)
-        {
-            int finalDamage = (int)(baseDamage * part.DamageMultiplier);
-            boss.Health -= finalDamage;
-        }
-        if (boss.Health < 0)
-        {
-            boss.Health = 0;
-        }
+        target.Health -= damage;
     }
 
     private void Update()

@@ -1,8 +1,8 @@
 public class BossBuilder
 {
-    private string? _name;
+    private string _name;
     private int _health;
-    private List<BossBodyPart> _bossbodyParts = new List<BossBodyPart>();
+    private List<BossBodyPart> _parts = new List<BossBodyPart>();
 
     public BossBuilder SetName(string name)
     {
@@ -18,12 +18,12 @@ public class BossBuilder
 
     public BossBuilder AddBossBodyPart(string name, float multiplier)
     {
-        _bossbodyParts.Add(new BossBodyPart(name, multiplier));
+        _parts.Add(new BossBodyPart(name, multiplier));
         return this;
     }
 
     public Boss Build()
     {
-        return new Boss(_name, _health, _bossbodyParts);
+        return new Boss(_name, _health, _parts);
     }
 }
