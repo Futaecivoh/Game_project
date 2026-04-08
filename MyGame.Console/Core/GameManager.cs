@@ -28,13 +28,14 @@ public class GameManager
         }
     }
 
-public enum Difficulty
+    public enum Difficulty
     {
         Hard, Medium, Easy
     }
+    
     private bool isRunning = true;
 
-public void Run()
+    public void Run()
     {
         Console.WriteLine("=== Welcome to the Card Game! ===");
         
@@ -59,6 +60,15 @@ public void Run()
             .AddBossBodyPart("Body", 1.0f)
             .AddBossBodyPart("Tail", 1.5f)
             .Build();
+
+
+        var bossLocation = map.Locations.Values
+            .FirstOrDefault(l => l.Type == "Boss");
+
+        if (bossLocation != null)
+        {
+            bossLocation.Boss = boss;
+        }
 
         Console.WriteLine($"Карта '{map.MapName}' готовченко!\n");
 
@@ -90,10 +100,17 @@ public void Run()
                 break;
             }
 
-            if (int.TryParse(input, out int choice) && choice > 0 && choice <= currentLocation.ConnectedLocations.Count)
+            if (int.TryParse(input, out int choice) &&
+                choice > 0 &&
+                choice <= currentLocation.ConnectedLocations.Count)
             {
                 currentLocation = currentLocation.ConnectedLocations[choice - 1];
                 currentLocation.Enter();
+
+                if (currentLocation.Type == "Boss" && currentLocation.Boss != null)
+                {
+                    HandleBossFight(currentLocation.Boss);
+                }
             }
             else
             {
@@ -104,16 +121,50 @@ public void Run()
         Console.WriteLine("Goodbye!");
     }
 
-    public void DealDamage(Boss boss, string partName, int baseDamage)
+    private void HandleBossFight(Boss boss)
+    {
+        while (boss.Health > 0)
         {
-            var part = boss.BossBodyParts.FirstOrDefault(p => p.Name == partName);
-
-            if (part != null)
+            Console.WriteLine("\nКуда ударим?");
+            
+            for (int i = 0; i < boss.BossBodyParts.Count; i++)
             {
-                int finalDamage = (int)(baseDamage * part.DamageMultiplier);
-                boss.Health -= finalDamage;
+                var part = boss.BossBodyParts[i];
+                Console.WriteLine($"[{i + 1}] {part.Name} (x{part.DamageMultiplier})");
+            }
+
+            string? input = Console.ReadLine();
+
+            if (int.TryParse(input, out int choice) &&
+                choice > 0 &&
+                choice <= boss.BossBodyParts.Count)
+            {
+                var selectedPart = boss.BossBodyParts[choice - 1];
+
+                DealDamage(boss, selectedPart.Name, 50);
+
+                Console.WriteLine($"Вы ударили в {selectedPart.Name}!");
+                Console.WriteLine($"HP босса: {boss.Health}");
+            }
+            else
+            {
+                Console.WriteLine("Неверный выбор.");
             }
         }
+
+        Console.WriteLine($"🎉 Босс {boss.Name} побежден!");
+    }
+
+    public void DealDamage(Boss boss, string partName, int baseDamage)
+    {
+        var part = boss.BossBodyParts.FirstOrDefault(p => p.Name == partName);
+
+        if (part != null)
+        {
+            int finalDamage = (int)(baseDamage * part.DamageMultiplier);
+            boss.Health -= finalDamage;
+        }
+    }
 
     private void Update()
     {
