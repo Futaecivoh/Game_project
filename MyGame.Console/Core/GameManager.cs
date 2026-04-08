@@ -164,6 +164,10 @@ public class GameManager
             int finalDamage = (int)(baseDamage * part.DamageMultiplier);
             boss.Health -= finalDamage;
         }
+        if (boss.Health < 0)
+        {
+            boss.Health = 0;
+        }
     }
 
     private void Update()

@@ -6,7 +6,6 @@ public class Location
 
     public List<Location> ConnectedLocations {get; set;} = new List<Location>();
 
-    // 🔥 ДОБАВЬ ЭТО
     public Boss? Boss { get; set; }
 
     public void Enter()
