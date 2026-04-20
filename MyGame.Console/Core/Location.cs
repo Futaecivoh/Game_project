@@ -14,7 +14,23 @@ public class Location
 
         if (Type == "Enemy")
         {
-            Console.WriteLine("Но никто не пришёл на фан-встречу...");
+            Console.WriteLine("Из кустов на вас выпрыгивает Гоблин!");
+            
+            Enemy goblin = new Enemy { Name = "Гоблин", Health = 100 };
+            Player player = GameManager.Instance.MainPlayer;
+
+            goblin.PerformBehavior(player); 
+
+            Console.WriteLine("\nВы наносите мощный ответный удар! HP Гоблина падает до 15.");
+            goblin.Health = 15;
+            //Сделай тут чё хошь короче, но пока он плачет как маленькая сучка
+
+            if (goblin.Health < 20)
+            {
+                goblin.SetBehavior(new FleeBehavior());
+            }
+
+            goblin.PerformBehavior(player); 
         }
 
         if (Type == "Boss" && Boss != null)
