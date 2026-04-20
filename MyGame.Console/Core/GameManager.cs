@@ -15,8 +15,8 @@ public class GameManager
 
     private GameManager()
     {
-        MapHeight = 200;
-        MapWidth = 200;
+        MapHeight = GameBalance.MapHeight;
+        MapWidth = GameBalance.MapWidth;
         CurrentDifficulty = Difficulty.Medium;
     }
 
@@ -217,27 +217,17 @@ public class GameManager
     }
 
     public void DealDamage(Boss boss, string partName, int baseDamage)
+    {
+        var part = boss.BossBodyParts.FirstOrDefault(p => p.Name == partName);
+
+        if (part != null)
         {
-            var part = boss.BossBodyParts.FirstOrDefault(p => p.Name == partName);
-
-            if (part != null)
-            {
-                int finalDamage = (int)(baseDamage * part.DamageMultiplier);
-                boss.Health -= finalDamage;
-            }
-            if (boss.Health < 0)
-            {
-                boss.Health = 0;
-            }
+            int finalDamage = (int)(baseDamage * part.DamageMultiplier);
+            boss.Health -= finalDamage;
         }
-
-    private void Update()
-    {
-        
-    }
-
-    private void Data()
-    {
-        
+        if (boss.Health < 0)
+        {
+            boss.Health = 0;
+        }
     }
 }
