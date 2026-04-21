@@ -24,7 +24,7 @@ public class Player : Creature
 
     public void GainXP(int xp)
     {
-        Level += xp / 100;
+        Level += xp / GameBalance.XpPerLevel;
         Console.WriteLine($"Игрок получил опыт! Уровень: {Level}");
     }
 

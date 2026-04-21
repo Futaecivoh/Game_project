@@ -21,4 +21,5 @@ public static class GameBalance
 
     public const int FireEnchantmentBonus = 20;
     public const int IceEnchantmentBonus = 15;
+    public const int XpPerLevel = 100;
 }
