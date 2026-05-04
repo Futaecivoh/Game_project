@@ -206,11 +206,11 @@ public class GameManager
        
         if (player.Health <= 0)
         {
-            Console.WriteLine("\n💀 Вы погибли в бою с боссом... Игра окончена.");
+            Console.WriteLine("\n Вы погибли в бою с боссом... Игра окончена.");
         }
         else
         {
-            Console.WriteLine($"\n🎉 Босс {boss.Name} побежден!");
+            Console.WriteLine($"\n Босс {boss.Name} побежден!");
         }
         
         isRunning = false;
@@ -218,6 +218,11 @@ public class GameManager
 
     public void DealDamage(Boss boss, string partName, int baseDamage)
     {
+        if (baseDamage < 0)
+        {
+        baseDamage = 0; 
+        }
+        
         var part = boss.BossBodyParts.FirstOrDefault(p => p.Name == partName);
 
         if (part != null)
