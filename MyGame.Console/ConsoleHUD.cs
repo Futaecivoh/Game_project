@@ -1,8 +1,5 @@
 public sealed class ConsoleHUD : IDisposable
 {
-    private readonly Player _player;
-    private readonly EventHandler<HealthChangedEventArgs> _handler;
-
     public ConsoleHUD(Player player)
     {
         _player = player;
@@ -37,4 +34,6 @@ public sealed class ConsoleHUD : IDisposable
     {
         _player.OnHealthChanged -= _handler;
     }
+    private readonly Player _player;
+    private readonly EventHandler<HealthChangedEventArgs> _handler;
 }
