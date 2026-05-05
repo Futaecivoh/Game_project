@@ -80,6 +80,8 @@ public class GameManager
         
         MainPlayer = new Player();
 
+        using var hud = new ConsoleHUD(MainPlayer);
+
         var weapon = MainPlayer.EquippedWeapon;
         Console.WriteLine($"Вы начинаете путь. В руках у вас: {weapon.GetDescription()} " +
                           $"(Урон: {weapon.GetDamage()})");
@@ -95,8 +97,21 @@ public class GameManager
         Location currentLocation = map.StartNode;
         currentLocation.Enter();
 
+        bool hudDemoShown = false;
+
         while (isRunning)
         {
+            if (!hudDemoShown)
+            {
+                hudDemoShown = true;
+                Console.WriteLine("Жизненные показатели героя подключены! Краткая сводка:");
+                Console.WriteLine($"Имя: {MainPlayer.Name}");
+                Console.WriteLine($"Уровень: {MainPlayer.Level}");
+                Console.WriteLine($"Здоровье: {MainPlayer.Health}");
+                Console.WriteLine($"Оружие: {MainPlayer.EquippedWeapon.GetDescription()}");
+                Console.WriteLine($"Урон: {MainPlayer.EquippedWeapon.GetDamage()}");
+            }
+
             Console.WriteLine("\nКуда отправимся дальше? (Выберите номер)");
             
             if (currentLocation.ConnectedLocations.Count == 0)
@@ -192,10 +207,7 @@ public class GameManager
                 {
                     int bossDamage = _random.Range(GameBalance.BossMinDamage, GameBalance.BossMaxDamage);
                     Console.WriteLine($"\n⚠️ Босс в ярости от вашей ошибки и атакует в ответ!");
-                    
-                    
-                    player.Health -= bossDamage; 
-                    Console.WriteLine($"Вы получили {bossDamage} урона! Ваше здоровье: {player.Health}");
+                    player.TakeDamage(bossDamage);
                 }
             }
             else
