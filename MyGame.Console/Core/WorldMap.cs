@@ -5,4 +5,5 @@ public class WorldMap
     public Dictionary<int, Location> Locations { get; set; } = new Dictionary<int, Location>();
     
     public Location? StartNode { get; set; }
+    public Location? CurrentLocation{get; set; }
 }
