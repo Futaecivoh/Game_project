@@ -1,5 +1,7 @@
 using MyGame.Console.Core.Commands;
 using System;
+using MyGame.Console.Core.SaveSystem;
+using System.Text.Json;
 
 public class GameManager
 {
@@ -8,6 +10,8 @@ public class GameManager
     public Difficulty CurrentDifficulty { get; private set; }
     
     public Player MainPlayer { get; private set; } = new Player();
+    public CommandHistory GameHistory { get; private set; } = new CommandHistory();
+    public SaveManager GameSaver { get; private set; } = new SaveManager();
 
     private static GameManager? _instance;
     
@@ -41,7 +45,6 @@ public class GameManager
     private bool isRunning = true;
     private bool? _actVictory;
     public bool IsInBossFight { get; private set; }
-    public CommandHistory GameHistory { get; private set; } = new CommandHistory();
 
     public void Run()
     {
@@ -107,6 +110,40 @@ public class GameManager
             else if (input == "9")
             {
                 GameHistory.UndoLastCommand();
+                continue;
+            }
+            else if (input == "8") 
+            {
+                var data = new GameSaveData
+                {
+                    PlayerHealth = MainPlayer.Health,
+                    PlayerLevel = MainPlayer.Level,
+                    WeaponDamage = MainPlayer.EquippedWeapon.GetDamage(),
+                    WeaponDescription = MainPlayer.EquippedWeapon.GetDescription(),
+                    CurrentLocationId = map.CurrentLocation.Id
+                };
+                GameSaver.SaveGame(data);
+                continue;
+            }
+            else if (input == "7") 
+            {
+                var data = GameSaver.LoadGame();
+                if (data != null)
+                {
+                    MainPlayer.Level = data.PlayerLevel;
+                    MainPlayer.Health = data.PlayerHealth;
+                    MainPlayer.EquippedWeapon = new RestoredWeapon(data.WeaponDamage, data.WeaponDescription);
+                    
+                    var loadedLocation = map.Locations.Values.FirstOrDefault(l => l.Id == data.CurrentLocationId);
+                    if (loadedLocation != null)
+                    {
+                        map.CurrentLocation = loadedLocation;
+                        
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine($"\n[Успех] Вы вернулись в локацию: {map.CurrentLocation.Name}");
+                        Console.ResetColor();
+                    }
+                }
                 continue;
             }
             else if (int.TryParse(input, out int choice))
@@ -183,7 +220,7 @@ public class GameManager
                     int bossDamage = _random.Range(GameBalance.BossMinDamage, GameBalance.BossMaxDamage);
                     player.TakeDamage(bossDamage);
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"⚠️  Босс в ярости и атакует в ответ! Урон: {bossDamage}");
+                    Console.WriteLine($"  Босс в ярости и атакует в ответ! Урон: {bossDamage}");
                     Console.ResetColor();
                     System.Threading.Thread.Sleep(800);
                 }
