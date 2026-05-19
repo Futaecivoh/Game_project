@@ -93,8 +93,12 @@ public class GameManager
         using var hud = new ConsoleHUD(MainPlayer);
 
         map.CurrentLocation = map.StartNode;
+        
+        if(map.CurrentLocation != null)
+        {    
         map.CurrentLocation.Enter();
         map.RecordVisit(map.CurrentLocation);
+        }
 
         while (isRunning)
         {
@@ -120,7 +124,7 @@ public class GameManager
                     PlayerLevel = MainPlayer.Level,
                     WeaponDamage = MainPlayer.EquippedWeapon.GetDamage(),
                     WeaponDescription = MainPlayer.EquippedWeapon.GetDescription(),
-                    CurrentLocationId = map.CurrentLocation.Id
+                    CurrentLocationId = map.CurrentLocation!.Id
                 };
                 GameSaver.SaveGame(data);
                 continue;
@@ -157,8 +161,8 @@ public class GameManager
                     ICommand moveCmd = new MoveToNodeCommand(map, chosenLocation);
                     GameHistory.ExecuteCommand(moveCmd);
 
-                    _uiController.ShowLocationEnter(map.CurrentLocation, isReturn);
-                    map.CurrentLocation.Enter();
+                    _uiController.ShowLocationEnter(map.CurrentLocation!, isReturn);
+                    map.CurrentLocation!.Enter();
                     map.RecordVisit(map.CurrentLocation);
 
                     if (map.CurrentLocation.Type == LocationType.Boss && map.CurrentLocation.Boss != null)
