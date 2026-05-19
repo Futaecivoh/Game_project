@@ -16,16 +16,15 @@ public class Location
         {
             Console.WriteLine("Из кустов на вас выпрыгивает Гоблин!");
             
-            Enemy goblin = new Enemy { Name = "Гоблин", Health = 100 };
+            Enemy goblin = new Enemy { Name = "Гоблин", Health = GameBalance.GoblinStartHealth };
             Player player = GameManager.Instance.MainPlayer;
 
             goblin.PerformBehavior(player); 
 
             Console.WriteLine("\nВы наносите мощный ответный удар! HP Гоблина падает до 15.");
-            goblin.Health = 15;
-            //Сделай тут чё хошь короче, но пока он плачет как маленькая сучка
+            goblin.Health = GameBalance.GoblinPostHitHealth;
 
-            if (goblin.Health < 20)
+            if (goblin.Health < GameBalance.GoblinFleeThreshold)
             {
                 goblin.SetBehavior(new FleeBehavior());
             }
@@ -45,16 +44,16 @@ public class Location
             Player player = GameManager.Instance.MainPlayer;
             
             
-            int roll = RNJesus.Range(1, 2); 
+            int roll = RNJesus.Range(GameBalance.RNJesusRangeMin, GameBalance.RNJesusRangeMax); 
             
             if (roll == 1)
             {
-                player.EquippedWeapon = new FireEnchantment(player.EquippedWeapon, 20);
+                player.EquippedWeapon = new FireEnchantment(player.EquippedWeapon, GameBalance.FireEnchantmentBonus);
                 Console.WriteLine("RNJesus благосклонен! Вы получили Зачарование Огня (+20 урона)!");
             }
             else
             {
-                player.EquippedWeapon = new IceEnchantment(player.EquippedWeapon, 15);
+                player.EquippedWeapon = new IceEnchantment(player.EquippedWeapon, GameBalance.IceEnchantmentBonus);
                 Console.WriteLine("RNJesus благосклонен! Вы получили Зачарование Льда (+15 урона)!");
             }
             
