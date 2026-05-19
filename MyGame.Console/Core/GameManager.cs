@@ -1,4 +1,5 @@
 using MyGame.Console.Core.Commands;
+using System;
 
 public class GameManager
 {
@@ -11,6 +12,7 @@ public class GameManager
     private static GameManager? _instance;
     
     private IRandomProvider _random = new RNJesusAdapter();
+    private GameUIController? _uiController;
 
     private GameManager()
     {
@@ -41,7 +43,7 @@ public class GameManager
 
     public void Run()
     {
-        Console.WriteLine("=== Welcome to the Card Game! ===");
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
         
         MapBuilder builder = new MapBuilder();
         WorldMap map = builder
@@ -78,58 +80,20 @@ public class GameManager
 
         bossLocation.Boss = boss;
 
-        
-        
         MainPlayer = new Player();
+        _uiController = new GameUIController(this, map);
+
+        _uiController.ShowGameStart();
 
         using var hud = new ConsoleHUD(MainPlayer);
-
-        var weapon = MainPlayer.EquippedWeapon;
-        Console.WriteLine($"Вы начинаете путь. В руках у вас: {weapon.GetDescription()} " +
-                          $"(Урон: {weapon.GetDamage()})");
-
-        Console.WriteLine($"Карта '{map.MapName}' готовченко!\n");
-
-        if (map.StartNode == null)
-        {
-            Console.WriteLine("Ошибка: нет стартовой локации");
-            return;
-        }
 
         map.CurrentLocation = map.StartNode;
         map.CurrentLocation.Enter();
 
-        bool hudDemoShown = false;
-
         while (isRunning)
         {
-            if (!hudDemoShown)
-            {
-                hudDemoShown = true;
-                Console.WriteLine("Жизненные показатели героя подключены! Краткая сводка:");
-                Console.WriteLine($"Имя: {MainPlayer.Name}");
-                Console.WriteLine($"Уровень: {MainPlayer.Level}");
-                Console.WriteLine($"Здоровье: {MainPlayer.Health}");
-                Console.WriteLine($"Оружие: {MainPlayer.EquippedWeapon.GetDescription()}");
-                Console.WriteLine($"Урон: {MainPlayer.EquippedWeapon.GetDamage()}");
-            }
-
-            Console.WriteLine("\nКуда отправимся дальше? (Выберите номер)");
+            _uiController.ShowLocationChoice();
             
-            if (map.CurrentLocation.ConnectedLocations.Count == 0)
-            {
-                Console.WriteLine("Дальше пути нет. Конец Акта 1!");
-            }
-
-            for (int i = 0; i < map.CurrentLocation.ConnectedLocations.Count; i++)
-            {
-                var nextLoc = map.CurrentLocation.ConnectedLocations[i];
-                Console.WriteLine($"[{i + 1}] -> {nextLoc.Name} ({nextLoc.Type})");
-            }
-            
-            Console.WriteLine("[0] -> Выйти из игры");
-            Console.WriteLine("[9] -> Вернуться назад (Отмена шага)");
-
             string? input = Console.ReadLine();
             
             if (input == "0")
@@ -137,8 +101,7 @@ public class GameManager
                 isRunning = false;
                 break;
             }
-
-           else if (input == "9")
+            else if (input == "9")
             {
                 GameHistory.UndoLastCommand();
                 continue;
@@ -152,7 +115,7 @@ public class GameManager
                 ICommand moveCmd = new MoveToNodeCommand(map, chosenLocation);
                 GameHistory.ExecuteCommand(moveCmd);
 
-                map.CurrentLocation.Enter();
+                _uiController.ShowLocationEnter(map.CurrentLocation);
 
                 if (map.CurrentLocation.Type == "Boss" && map.CurrentLocation.Boss != null)
                 {
@@ -161,27 +124,20 @@ public class GameManager
             }
             else
             {
-                Console.WriteLine("Неверный выбор, попробуйте еще раз.");
+                _uiController.ShowInvalidChoice();
             }
         }
 
-        Console.WriteLine("Goodbye!");
+        _uiController.ShowGameOver(false);
     }
 
     private void HandleBossFight(Player player, Boss boss)
     {
-        Console.WriteLine($"\nВЫ ВОШЛИ В ЛОГОВО БОССА: {boss.Name}!");
-        Console.WriteLine($"У босса {boss.Health} ХП. Ваше ХП: {player.Health}");
-        
+        _uiController?.ShowBattleStart(boss);
+
         while (boss.Health > 0 && player.Health > 0)
         {
-            Console.WriteLine("\nКуда ударим?");
-            
-            for (int i = 0; i < boss.BossBodyParts.Count; i++)
-            {
-                var part = boss.BossBodyParts[i];
-                Console.WriteLine($"[{i + 1}] {part.Name} (x{part.DamageMultiplier})");
-            }
+            _uiController?.ShowBattleMenu(boss);
 
             string? input = Console.ReadLine();
 
@@ -189,54 +145,46 @@ public class GameManager
             {
                 var targetPart = boss.BossBodyParts[choice - 1];
 
-                
                 bool hit = _random.Roll(GameBalance.HitChance);
-
                 BossBodyPart actualPart;
 
                 if (hit)
                 {
                     actualPart = targetPart;
-                    Console.WriteLine("\n🎯 Попадание!");
                 }
                 else
                 {
-                   
                     int index = _random.Range(0, boss.BossBodyParts.Count - 1);
                     actualPart = boss.BossBodyParts[index];
-                    Console.WriteLine($"\n💨 Промах! Оружие соскользнуло и попало в: {actualPart.Name}");
                 }
                 
                 int currentDamage = player.EquippedWeapon.GetDamage();
-                
+                int damageDealt = (int)(currentDamage * actualPart.DamageMultiplier);
                 DealDamage(boss, actualPart.Name, currentDamage);
 
-                Console.WriteLine($"Вы ударили оружием '{player.EquippedWeapon.GetDescription()}'!");
-                Console.WriteLine($"Осталось HP босса: {boss.Health}");
+                _uiController?.ShowBattleUpdate(boss, hit, actualPart, damageDealt);
                 
                 if (!hit && boss.Health > 0)
                 {
                     int bossDamage = _random.Range(GameBalance.BossMinDamage, GameBalance.BossMaxDamage);
-                    Console.WriteLine($"\n⚠️ Босс в ярости от вашей ошибки и атакует в ответ!");
                     player.TakeDamage(bossDamage);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"⚠️  Босс в ярости и атакует в ответ! Урон: {bossDamage}");
+                    Console.ResetColor();
+                    System.Threading.Thread.Sleep(800);
                 }
             }
             else
             {
+                Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Неверный выбор.");
+                Console.ResetColor();
             }
         }
        
-        if (player.Health <= 0)
-        {
-            Console.WriteLine("\n Вы погибли в бою с боссом... Игра окончена.");
-        }
-        else
-        {
-            Console.WriteLine($"\n Босс {boss.Name} побежден!");
-        }
-        
-        isRunning = false;
+        bool playerWon = player.Health > 0;
+        _uiController?.ShowBattleResult(playerWon);
+        isRunning = !playerWon;
     }
 
     public void DealDamage(Boss boss, string partName, int baseDamage)

@@ -10,18 +10,23 @@ public class Location
 
     public void Enter()
     {
-        Console.WriteLine($"\n Вы прибыли в локацию: {Name} ({Type})");
+        Player player = GameManager.Instance.MainPlayer;
 
         if (Type == "Enemy")
         {
-            Console.WriteLine("Из кустов на вас выпрыгивает Гоблин!");
-            
             Enemy goblin = new Enemy { Name = "Гоблин", Health = GameBalance.GoblinStartHealth };
-            Player player = GameManager.Instance.MainPlayer;
+
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("🚨 Из кустов выпрыгивает враг!");
+            Console.ResetColor();
+            System.Threading.Thread.Sleep(800);
 
             goblin.PerformBehavior(player); 
 
-            Console.WriteLine("\nВы наносите мощный ответный удар! HP Гоблина падает до 15.");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\nВы наносите мощный ответный удар!");
+            Console.ResetColor();
             goblin.Health = GameBalance.GoblinPostHitHealth;
 
             if (goblin.Health < GameBalance.GoblinFleeThreshold)
@@ -29,36 +34,52 @@ public class Location
                 goblin.SetBehavior(new FleeBehavior());
             }
 
-            goblin.PerformBehavior(player); 
+            goblin.PerformBehavior(player);
+            System.Threading.Thread.Sleep(800);
         }
 
         if (Type == "Boss" && Boss != null)
         {
-            Console.WriteLine($"Вы встретили босса: {Boss.Name} (HP: {Boss.Health})");
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.WriteLine($"⚡ Вы встретили босса: {Boss.Name} (HP: {Boss.Health})");
+            Console.ResetColor();
         }
 
         else if (Type == "Event")
         {
-            Console.WriteLine("Вы находите древний алтарь! Ваше оружие начинает вибрировать...");
-            
-            Player player = GameManager.Instance.MainPlayer;
-            
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("✨ Вы находите древний алтарь! Ваше оружие начинает вибрировать...");
+            Console.ResetColor();
+            System.Threading.Thread.Sleep(1000);
             
             int roll = RNJesus.Range(GameBalance.RNJesusRangeMin, GameBalance.RNJesusRangeMax); 
             
             if (roll == 1)
             {
+                var oldWeapon = player.EquippedWeapon;
                 player.EquippedWeapon = new FireEnchantment(player.EquippedWeapon, GameBalance.FireEnchantmentBonus);
-                Console.WriteLine("RNJesus благосклонен! Вы получили Зачарование Огня (+20 урона)!");
+                
+                Console.WriteLine();
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("🔥 RNJesus благосклонен! Вы получили Зачарование Огня!");
+                Console.WriteLine($"   Урон увеличен с {oldWeapon.GetDamage()} до {player.EquippedWeapon.GetDamage()}");
+                Console.ResetColor();
             }
             else
             {
+                var oldWeapon = player.EquippedWeapon;
                 player.EquippedWeapon = new IceEnchantment(player.EquippedWeapon, GameBalance.IceEnchantmentBonus);
-                Console.WriteLine("RNJesus благосклонен! Вы получили Зачарование Льда (+15 урона)!");
+                
+                Console.WriteLine();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("❄️  RNJesus благосклонен! Вы получили Зачарование Льда!");
+                Console.WriteLine($"   Урон увеличен с {oldWeapon.GetDamage()} до {player.EquippedWeapon.GetDamage()}");
+                Console.ResetColor();
             }
             
-            Console.WriteLine($"Теперь ваше оружие: {player.EquippedWeapon.GetDescription()}");
-            Console.WriteLine($"Ваш новый базовый урон: {player.EquippedWeapon.GetDamage()}");
+            System.Threading.Thread.Sleep(1200);
         }
     }
 }
