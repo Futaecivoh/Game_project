@@ -1,5 +1,4 @@
-using System;
-using System.Threading;
+using MyGame.Console.Core.Commands;
 
 public class GameManager
 {
@@ -38,6 +37,7 @@ public class GameManager
     }
     
     private bool isRunning = true;
+    public CommandHistory GameHistory { get; private set; } = new CommandHistory();
 
     public void Run()
     {
@@ -50,10 +50,12 @@ public class GameManager
             .AddLocation(2, "Засада врагов", "Enemy")
             .AddLocation(3, "Артефакты", "Event")
             .AddLocation(4, "Босс", "Boss")
+            .AddLocation(5, "Торговец", "Shop")
             .Connect(1, 2)
             .Connect(1, 3)
             .Connect(2, 4)
             .Connect(3, 4)
+            .Connect(1, 5)
             .SetStartLocation(1)
             .Build();
 
@@ -80,6 +82,8 @@ public class GameManager
         
         MainPlayer = new Player();
 
+        using var hud = new ConsoleHUD(MainPlayer);
+
         var weapon = MainPlayer.EquippedWeapon;
         Console.WriteLine($"Вы начинаете путь. В руках у вас: {weapon.GetDescription()} " +
                           $"(Урон: {weapon.GetDamage()})");
@@ -92,25 +96,39 @@ public class GameManager
             return;
         }
 
-        Location currentLocation = map.StartNode;
-        currentLocation.Enter();
+        map.CurrentLocation = map.StartNode;
+        map.CurrentLocation.Enter();
+
+        bool hudDemoShown = false;
 
         while (isRunning)
         {
-            Console.WriteLine("\nКуда отправимся дальше? (Выберите номер)");
-            
-            if (currentLocation.ConnectedLocations.Count == 0)
+            if (!hudDemoShown)
             {
-                Console.WriteLine("Дальше пути нет. Конец Акта 1!");
-                break;
+                hudDemoShown = true;
+                Console.WriteLine("Жизненные показатели героя подключены! Краткая сводка:");
+                Console.WriteLine($"Имя: {MainPlayer.Name}");
+                Console.WriteLine($"Уровень: {MainPlayer.Level}");
+                Console.WriteLine($"Здоровье: {MainPlayer.Health}");
+                Console.WriteLine($"Оружие: {MainPlayer.EquippedWeapon.GetDescription()}");
+                Console.WriteLine($"Урон: {MainPlayer.EquippedWeapon.GetDamage()}");
             }
 
-            for (int i = 0; i < currentLocation.ConnectedLocations.Count; i++)
+            Console.WriteLine("\nКуда отправимся дальше? (Выберите номер)");
+            
+            if (map.CurrentLocation.ConnectedLocations.Count == 0)
             {
-                var nextLoc = currentLocation.ConnectedLocations[i];
+                Console.WriteLine("Дальше пути нет. Конец Акта 1!");
+            }
+
+            for (int i = 0; i < map.CurrentLocation.ConnectedLocations.Count; i++)
+            {
+                var nextLoc = map.CurrentLocation.ConnectedLocations[i];
                 Console.WriteLine($"[{i + 1}] -> {nextLoc.Name} ({nextLoc.Type})");
             }
+            
             Console.WriteLine("[0] -> Выйти из игры");
+            Console.WriteLine("[9] -> Вернуться назад (Отмена шага)");
 
             string? input = Console.ReadLine();
             
@@ -120,17 +138,25 @@ public class GameManager
                 break;
             }
 
-            if (int.TryParse(input, out int choice) &&
-                choice > 0 &&
-                choice <= currentLocation.ConnectedLocations.Count)
+           else if (input == "9")
             {
-                currentLocation = currentLocation.ConnectedLocations[choice - 1];
-                currentLocation.Enter();
+                GameHistory.UndoLastCommand();
+                continue;
+            }
+            else if (int.TryParse(input, out int choice) &&
+                choice > 0 &&
+                choice <= map.CurrentLocation.ConnectedLocations.Count)
+            {
+                var chosenLocation = map.CurrentLocation.ConnectedLocations[choice - 1];
 
-                
-                if (currentLocation.Type == "Boss" && currentLocation.Boss != null)
+                ICommand moveCmd = new MoveToNodeCommand(map, chosenLocation);
+                GameHistory.ExecuteCommand(moveCmd);
+
+                map.CurrentLocation.Enter();
+
+                if (map.CurrentLocation.Type == "Boss" && map.CurrentLocation.Boss != null)
                 {
-                    HandleBossFight(MainPlayer, currentLocation.Boss);
+                    HandleBossFight(MainPlayer, map.CurrentLocation.Boss);
                 }
             }
             else
@@ -192,10 +218,7 @@ public class GameManager
                 {
                     int bossDamage = _random.Range(GameBalance.BossMinDamage, GameBalance.BossMaxDamage);
                     Console.WriteLine($"\n⚠️ Босс в ярости от вашей ошибки и атакует в ответ!");
-                    
-                    
-                    player.Health -= bossDamage; 
-                    Console.WriteLine($"Вы получили {bossDamage} урона! Ваше здоровье: {player.Health}");
+                    player.TakeDamage(bossDamage);
                 }
             }
             else
@@ -206,19 +229,19 @@ public class GameManager
        
         if (player.Health <= 0)
         {
-            Console.WriteLine("\n💀 Вы погибли в бою с боссом... Игра окончена.");
+            Console.WriteLine("\n Вы погибли в бою с боссом... Игра окончена.");
         }
         else
         {
-            Console.WriteLine($"\n🎉 Босс {boss.Name} побежден!");
+            Console.WriteLine($"\n Босс {boss.Name} побежден!");
         }
         
         isRunning = false;
     }
 
     public void DealDamage(Boss boss, string partName, int baseDamage)
-    {
-        var part = boss.BossBodyParts.FirstOrDefault(p => p.Name == partName);
+        {
+            var part = boss.BossBodyParts.FirstOrDefault(p => p.Name == partName);
 
         if (part != null)
         {
