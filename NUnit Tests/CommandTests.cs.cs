@@ -11,8 +11,8 @@ namespace NUnit_Tests
             var history = new CommandHistory();
             var map = new WorldMap();
             
-            var startNode = new Location { Id = 1, Name = "Развилка", Type = "Event" };
-            var shopNode = new Location { Id = 2, Name = "Магазин артефактов", Type = "Event" };
+            var startNode = LocationFactory.Create(1, "Развилка", LocationType.Event);
+            var shopNode = LocationFactory.Create(2, "Магазин артефактов", LocationType.Shop);
 
             startNode.ConnectedLocations.Add(shopNode);
             map.CurrentLocation = startNode;

@@ -47,31 +47,10 @@ public class GameUIController
     public void ShowLocationChoice()
     {
         UIManager.DrawMap(_map);
-        UIManager.DrawMapTree(_map);
-        Console.WriteLine("\nВыберите локацию:");
+        Console.WriteLine();
         Console.WriteLine("[0] - Выйти из игры");
-        if (_map.PreviousLocation != null)
-            Console.WriteLine("[8] - Вернуться в предыдущую локацию");
         Console.WriteLine("[9] - Отмена последнего шага");
         Console.Write("\nВаш выбор: ");
-    }
-
-    public void ShowCannotGoBackDuringBossFight()
-    {
-        UIManager.ShowMessage("БОЙ", "Во время боя с боссом нельзя покинуть локацию!", 55);
-    }
-
-    public void ShowCannotGoBack()
-    {
-        UIManager.ShowMessage("НАЗАД", "Некуда возвращаться — вы в начальной точке.", 55);
-    }
-
-    public void ShowReturnToLocation(Location location)
-    {
-        Console.WriteLine();
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine($">>> Вы вернулись в локацию: {location.Name} ({location.Type})");
-        Console.ResetColor();
     }
 
     public void ShowInvalidChoice()
@@ -79,11 +58,19 @@ public class GameUIController
         UIManager.ShowMessage("ОШИБКА", "Неверный выбор, попробуйте еще раз.", 50);
     }
 
-    public void ShowLocationEnter(Location location)
+    public void ShowLocationEnter(Location location, bool isReturn = false)
     {
         Console.WriteLine();
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($">>> Вы прибыли в локацию: {location.Name} ({location.Type})");
+        if (isReturn)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine($">>> Вы возвращаетесь: {location.Name}");
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($">>> Вы прибыли: {location.Name}");
+        }
         Console.ResetColor();
     }
 

@@ -15,6 +15,35 @@ public class UIManager
     private const char T_RIGHT = '├';
     private const char CROSS = '┼';
 
+    private static int InnerWidth(int boxWidth) => boxWidth - 4;
+
+    private static void WriteBoxLine(int boxWidth, string content)
+    {
+        int inner = InnerWidth(boxWidth);
+        if (content.Length > inner)
+            content = content[..inner];
+
+        Console.Write(VERTICAL);
+        Console.Write(' ');
+        Console.Write(content);
+        Console.Write(new string(' ', inner - content.Length));
+        Console.Write(' ');
+        Console.WriteLine(VERTICAL);
+    }
+
+    private static void WriteBoxLine(int boxWidth, int contentLength, Action writeContent)
+    {
+        int inner = InnerWidth(boxWidth);
+        int padding = Math.Max(0, inner - contentLength);
+
+        Console.Write(VERTICAL);
+        Console.Write(' ');
+        writeContent();
+        Console.Write(new string(' ', padding));
+        Console.Write(' ');
+        Console.WriteLine(VERTICAL);
+    }
+
     public static void ClearScreen()
     {
         Console.Clear();
@@ -30,17 +59,9 @@ public class UIManager
             for (int i = 0; i < height - 2; i++)
             {
                 if (i < lines.Length)
-                {
-                    Console.Write(VERTICAL + " ");
-                    Console.Write(lines[i].PadRight(width - 4));
-                    Console.WriteLine(" " + VERTICAL);
-                }
+                    WriteBoxLine(width, lines[i]);
                 else
-                {
-                    Console.Write(VERTICAL + " ");
-                    Console.Write(new string(' ', width - 4));
-                    Console.WriteLine(" " + VERTICAL);
-                }
+                    WriteBoxLine(width, string.Empty);
             }
         }
         else
@@ -123,140 +144,76 @@ public class UIManager
         int boxWidth = 60;
 
         DrawTopBorder("СТАТИСТИКА ГЕРОЯ", boxWidth);
-        
-        Console.Write(VERTICAL + " ");
-        Console.Write($"Имя: {player.Name}".PadRight(boxWidth - 4));
-        Console.WriteLine(" " + VERTICAL);
 
-        Console.Write(VERTICAL + " ");
-        Console.Write($"Уровень: {player.Level}".PadRight(boxWidth - 4));
-        Console.WriteLine(" " + VERTICAL);
+        WriteBoxLine(boxWidth, $"Имя: {player.Name}");
+        WriteBoxLine(boxWidth, $"Уровень: {player.Level}");
 
-        Console.Write(VERTICAL + " ");
-        Console.Write("Здоровье: ".PadRight(boxWidth - 4 - 25));
-        DrawHealthBar(player.Health, player.MaxHealth, 22);
-        Console.WriteLine(" " + VERTICAL);
+        string healthLabel = "Здоровье: ";
+        int healthBarLength = 2 + 22 + 1 + $"{player.Health}/{player.MaxHealth}".Length;
+        WriteBoxLine(boxWidth, healthLabel.Length + healthBarLength, () =>
+        {
+            Console.Write(healthLabel);
+            DrawHealthBar(player.Health, player.MaxHealth, 22);
+        });
 
-        Console.Write(VERTICAL + " ");
-        Console.Write($"Оружие: {player.EquippedWeapon.GetDescription()}".PadRight(boxWidth - 4));
-        Console.WriteLine(" " + VERTICAL);
-
-        Console.Write(VERTICAL + " ");
-        Console.Write($"Урон: {player.EquippedWeapon.GetDamage()}".PadRight(boxWidth - 4));
-        Console.WriteLine(" " + VERTICAL);
+        WriteBoxLine(boxWidth, $"Оружие: {player.EquippedWeapon.GetDescription()}");
+        WriteBoxLine(boxWidth, $"Урон: {player.EquippedWeapon.GetDamage()}");
 
         DrawBottomBorder(boxWidth);
     }
 
     public static void DrawMap(WorldMap map)
     {
-        int boxWidth = 80;
+        int boxWidth = 56;
         Console.WriteLine();
-        DrawTopBorder($"КАРТА: {map.MapName}", boxWidth);
+        DrawTopBorder(map.MapName ?? "Карта", boxWidth);
 
-        Console.Write(VERTICAL + " ");
-        Console.Write("Текущая локация: ".PadRight(boxWidth - 4 - 30));
-        Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.Write(map.CurrentLocation?.Name ?? "Неизвестно");
-        Console.ResetColor();
-        Console.WriteLine(" " + VERTICAL);
-
-        Console.Write(VERTICAL + " ");
-        Console.Write($"Тип: {map.CurrentLocation?.Type ?? "N/A"}".PadRight(boxWidth - 4));
-        Console.WriteLine(" " + VERTICAL);
+        string locationName = map.CurrentLocation?.Name ?? "Неизвестно";
+        string hereLine = $"● {locationName}";
+        WriteBoxLine(boxWidth, hereLine.Length, () =>
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write(hereLine);
+            Console.ResetColor();
+        });
 
         DrawSeparator(boxWidth);
 
-        Console.Write(VERTICAL + " Доступные локации:".PadRight(boxWidth - 1));
-        Console.WriteLine(VERTICAL);
-
-        if (map.CurrentLocation?.ConnectedLocations.Count == 0)
+        var travelOptions = map.GetTravelOptions();
+        if (travelOptions.Count == 0)
         {
-            Console.Write(VERTICAL + " ");
-            Console.Write("Дальше пути нет!".PadRight(boxWidth - 4));
-            Console.WriteLine(" " + VERTICAL);
+            WriteBoxLine(boxWidth, "Дальше пути нет.");
         }
         else
         {
-            for (int i = 0; i < map.CurrentLocation?.ConnectedLocations.Count; i++)
+            for (int i = 0; i < travelOptions.Count; i++)
             {
-                var location = map.CurrentLocation.ConnectedLocations[i];
-                Console.Write(VERTICAL + " ");
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.Write($"[{i + 1}]");
-                Console.ResetColor();
-                Console.Write($" -> {location.Name} ({location.Type})".PadRight(boxWidth - 10));
-                Console.WriteLine(VERTICAL);
+                var location = travelOptions[i];
+                bool isReturn = map.IsReturnPath(location);
+                bool visited = map.HasVisited(location);
+                string arrow = isReturn ? "← " : "→ ";
+                string optionText = $"{i + 1}) {arrow}{location.Name}";
+                WriteBoxLine(boxWidth, optionText.Length, () =>
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.Write($"{i + 1})");
+                    Console.ResetColor();
+                    Console.Write($" {arrow}");
+                    if (visited)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write(location.Name);
+                        Console.ResetColor();
+                    }
+                    else
+                    {
+                        Console.Write(location.Name);
+                    }
+                });
             }
         }
 
         DrawBottomBorder(boxWidth);
-    }
-
-    public static void DrawMapTree(WorldMap map)
-    {
-        int boxWidth = 80;
-        Console.WriteLine();
-        DrawTopBorder("ДРЕВО КАРТЫ", boxWidth);
-
-        if (map.StartNode == null)
-        {
-            Console.Write(VERTICAL + " ");
-            Console.Write("Карта не задана.".PadRight(boxWidth - 4));
-            Console.WriteLine(" " + VERTICAL);
-            DrawBottomBorder(boxWidth);
-            return;
-        }
-
-        var visited = new HashSet<int>();
-        DrawMapTreeNode(map.StartNode, map.CurrentLocation, "", true, visited, boxWidth);
-
-        DrawBottomBorder(boxWidth);
-    }
-
-    private static void DrawMapTreeNode(
-        Location node,
-        Location? current,
-        string prefix,
-        bool isLast,
-        HashSet<int> visited,
-        int boxWidth)
-    {
-        string branch = isLast ? "└─ " : "├─ ";
-        string marker = node == current ? " ◄ вы здесь" : "";
-        string line = $"{prefix}{branch}[{node.Id}] {node.Name} ({node.Type}){marker}";
-
-        Console.Write(VERTICAL + " ");
-        if (node == current)
-            Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.Write(line.PadRight(boxWidth - 4));
-        if (node == current)
-            Console.ResetColor();
-        Console.WriteLine(" " + VERTICAL);
-
-        if (visited.Contains(node.Id))
-            return;
-
-        visited.Add(node.Id);
-
-        string childPrefix = prefix + (isLast ? "   " : "│  ");
-        var children = node.ConnectedLocations;
-        for (int i = 0; i < children.Count; i++)
-        {
-            var child = children[i];
-            if (visited.Contains(child.Id))
-            {
-                string refLine = $"{childPrefix}└─ [{child.Id}] {child.Name} (↩ уже в дереве)";
-                Console.Write(VERTICAL + " ");
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write(refLine.PadRight(boxWidth - 4));
-                Console.ResetColor();
-                Console.WriteLine(" " + VERTICAL);
-                continue;
-            }
-
-            DrawMapTreeNode(child, current, childPrefix, i == children.Count - 1, visited, boxWidth);
-        }
     }
 
     public static void DrawBattleInterface(Player player, Boss boss)
@@ -266,34 +223,39 @@ public class UIManager
 
         DrawTopBorder($"БОЙ: {boss.Name}", boxWidth);
 
-        Console.Write(VERTICAL + " ");
-        Console.Write($"Противник: {boss.Name}".PadRight(boxWidth - 4));
-        Console.WriteLine(" " + VERTICAL);
+        WriteBoxLine(boxWidth, $"Противник: {boss.Name}");
 
-        Console.Write(VERTICAL + " ");
-        Console.Write("Здоровье босса: ".PadRight(boxWidth - 4 - 25));
-        DrawHealthBar(boss.Health, boss.GetMaxHealth(), 22);
-        Console.WriteLine(" " + VERTICAL);
+        string bossHealthLabel = "Здоровье босса: ";
+        int bossBarLength = 2 + 22 + 1 + $"{boss.Health}/{boss.GetMaxHealth()}".Length;
+        WriteBoxLine(boxWidth, bossHealthLabel.Length + bossBarLength, () =>
+        {
+            Console.Write(bossHealthLabel);
+            DrawHealthBar(boss.Health, boss.GetMaxHealth(), 22);
+        });
 
-        Console.Write(VERTICAL + " ");
-        Console.Write("Ваше здоровье: ".PadRight(boxWidth - 4 - 25));
-        DrawHealthBar(player.Health, player.MaxHealth, 22);
-        Console.WriteLine(" " + VERTICAL);
+        string playerHealthLabel = "Ваше здоровье: ";
+        int playerBarLength = 2 + 22 + 1 + $"{player.Health}/{player.MaxHealth}".Length;
+        WriteBoxLine(boxWidth, playerHealthLabel.Length + playerBarLength, () =>
+        {
+            Console.Write(playerHealthLabel);
+            DrawHealthBar(player.Health, player.MaxHealth, 22);
+        });
 
         DrawSeparator(boxWidth);
 
-        Console.Write(VERTICAL + " Части тела:".PadRight(boxWidth - 1));
-        Console.WriteLine(VERTICAL);
+        WriteBoxLine(boxWidth, "Части тела:");
 
         for (int i = 0; i < boss.BossBodyParts.Count; i++)
         {
             var part = boss.BossBodyParts[i];
-            Console.Write(VERTICAL + " ");
-            Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.Write($"[{i + 1}]");
-            Console.ResetColor();
-            Console.Write($" {part.Name} (x{part.DamageMultiplier})".PadRight(boxWidth - 10));
-            Console.WriteLine(VERTICAL);
+            string partText = $"[{i + 1}] {part.Name} (x{part.DamageMultiplier})";
+            WriteBoxLine(boxWidth, partText.Length, () =>
+            {
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.Write($"[{i + 1}]");
+                Console.ResetColor();
+                Console.Write($" {part.Name} (x{part.DamageMultiplier})");
+            });
         }
 
         DrawBottomBorder(boxWidth);
@@ -306,19 +268,23 @@ public class UIManager
 
         DrawTopBorder("ВСТРЕЧА С ВРАГОМ", boxWidth);
 
-        Console.Write(VERTICAL + " ");
-        Console.Write($"Враг: {enemy.Name}".PadRight(boxWidth - 4));
-        Console.WriteLine(" " + VERTICAL);
+        WriteBoxLine(boxWidth, $"Враг: {enemy.Name}");
 
-        Console.Write(VERTICAL + " ");
-        Console.Write("Здоровье врага: ".PadRight(boxWidth - 4 - 20));
-        DrawHealthBar(enemy.Health, 100, 18);
-        Console.WriteLine(" " + VERTICAL);
+        string enemyHealthLabel = "Здоровье врага: ";
+        int enemyBarLength = 2 + 18 + 1 + $"{enemy.Health}/100".Length;
+        WriteBoxLine(boxWidth, enemyHealthLabel.Length + enemyBarLength, () =>
+        {
+            Console.Write(enemyHealthLabel);
+            DrawHealthBar(enemy.Health, 100, 18);
+        });
 
-        Console.Write(VERTICAL + " ");
-        Console.Write("Ваше здоровье: ".PadRight(boxWidth - 4 - 20));
-        DrawHealthBar(player.Health, player.MaxHealth, 18);
-        Console.WriteLine(" " + VERTICAL);
+        string playerHealthLabel = "Ваше здоровье: ";
+        int playerBarLength = 2 + 18 + 1 + $"{player.Health}/{player.MaxHealth}".Length;
+        WriteBoxLine(boxWidth, playerHealthLabel.Length + playerBarLength, () =>
+        {
+            Console.Write(playerHealthLabel);
+            DrawHealthBar(player.Health, player.MaxHealth, 18);
+        });
 
         DrawBottomBorder(boxWidth);
     }
@@ -331,16 +297,10 @@ public class UIManager
         var lines = message.Split('\n');
         for (int i = 0; i < Math.Max(lines.Length, 3); i++)
         {
-            Console.Write(VERTICAL + " ");
             if (i < lines.Length)
-            {
-                Console.Write(lines[i].PadRight(width - 4));
-            }
+                WriteBoxLine(width, lines[i]);
             else
-            {
-                Console.Write(new string(' ', width - 4));
-            }
-            Console.WriteLine(" " + VERTICAL);
+                WriteBoxLine(width, string.Empty);
         }
         
         DrawBottomBorder(width);
@@ -354,11 +314,12 @@ public class UIManager
 
         foreach (var (label, color) in options)
         {
-            Console.Write(VERTICAL + " ");
-            Console.ForegroundColor = color;
-            Console.Write(label.PadRight(width - 4));
-            Console.ResetColor();
-            Console.WriteLine(" " + VERTICAL);
+            WriteBoxLine(width, label.Length, () =>
+            {
+                Console.ForegroundColor = color;
+                Console.Write(label);
+                Console.ResetColor();
+            });
         }
 
         DrawBottomBorder(width);
@@ -371,11 +332,13 @@ public class UIManager
         int width = 50;
         
         DrawTopBorder("╔═══════════════════╗", width);
-        Console.Write(VERTICAL + " ");
-        Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.Write("   ДРЕВНЯЯ ТЬМА   ".PadRight(width - 4));
-        Console.ResetColor();
-        Console.WriteLine(" " + VERTICAL);
+        const string titleLine = "   ДРЕВНЯЯ ТЬМА   ";
+        WriteBoxLine(width, titleLine.Length, () =>
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write(titleLine);
+            Console.ResetColor();
+        });
         
         DrawSeparator(width);
 

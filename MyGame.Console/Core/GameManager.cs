@@ -39,6 +39,7 @@ public class GameManager
     }
     
     private bool isRunning = true;
+    private bool? _actVictory;
     public bool IsInBossFight { get; private set; }
     public CommandHistory GameHistory { get; private set; } = new CommandHistory();
 
@@ -49,11 +50,11 @@ public class GameManager
         MapBuilder builder = new MapBuilder();
         WorldMap map = builder
             .SetMapName("Акт 1: Темный лес")
-            .AddLocation(1, "Старт", "Start")
-            .AddLocation(2, "Засада врагов", "Enemy")
-            .AddLocation(3, "Артефакты", "Event")
-            .AddLocation(4, "Босс", "Boss")
-            .AddLocation(5, "Торговец", "Shop")
+            .AddLocation(1, "Старт", LocationType.Start)
+            .AddLocation(2, "Засада врагов", LocationType.Enemy)
+            .AddLocation(3, "Артефакты", LocationType.OneTimeEvent)
+            .AddLocation(4, "Босс", LocationType.Boss)
+            .AddLocation(5, "Торговец", LocationType.Shop)
             .Connect(1, 2)
             .Connect(1, 3)
             .Connect(2, 4)
@@ -71,7 +72,7 @@ public class GameManager
             .Build();
 
         var bossLocation = map.Locations.Values
-            .FirstOrDefault(l => l.Type == "Boss");
+            .FirstOrDefault(l => l.Type == LocationType.Boss);
 
         if (bossLocation == null)
         {
@@ -90,6 +91,7 @@ public class GameManager
 
         map.CurrentLocation = map.StartNode;
         map.CurrentLocation.Enter();
+        map.RecordVisit(map.CurrentLocation);
 
         while (isRunning)
         {
@@ -102,31 +104,34 @@ public class GameManager
                 isRunning = false;
                 break;
             }
-            else if (input == "8")
-            {
-                TryReturnToPreviousLocation(map);
-                continue;
-            }
             else if (input == "9")
             {
                 GameHistory.UndoLastCommand();
                 continue;
             }
-            else if (int.TryParse(input, out int choice) &&
-                choice > 0 &&
-                choice <= map.CurrentLocation.ConnectedLocations.Count)
+            else if (int.TryParse(input, out int choice))
             {
-                var chosenLocation = map.CurrentLocation.ConnectedLocations[choice - 1];
-
-                ICommand moveCmd = new MoveToNodeCommand(map, chosenLocation);
-                GameHistory.ExecuteCommand(moveCmd);
-
-                _uiController.ShowLocationEnter(map.CurrentLocation);
-                map.CurrentLocation.Enter();
-
-                if (map.CurrentLocation.Type == "Boss" && map.CurrentLocation.Boss != null)
+                var travelOptions = map.GetTravelOptions();
+                if (choice > 0 && choice <= travelOptions.Count)
                 {
-                    HandleBossFight(MainPlayer, map.CurrentLocation.Boss);
+                    var chosenLocation = travelOptions[choice - 1];
+                    bool isReturn = map.IsReturnPath(chosenLocation);
+
+                    ICommand moveCmd = new MoveToNodeCommand(map, chosenLocation);
+                    GameHistory.ExecuteCommand(moveCmd);
+
+                    _uiController.ShowLocationEnter(map.CurrentLocation, isReturn);
+                    map.CurrentLocation.Enter();
+                    map.RecordVisit(map.CurrentLocation);
+
+                    if (map.CurrentLocation.Type == LocationType.Boss && map.CurrentLocation.Boss != null)
+                    {
+                        HandleBossFight(MainPlayer, map.CurrentLocation.Boss);
+                    }
+                }
+                else
+                {
+                    _uiController.ShowInvalidChoice();
                 }
             }
             else
@@ -135,27 +140,8 @@ public class GameManager
             }
         }
 
-        _uiController.ShowGameOver(false);
-    }
-
-    private void TryReturnToPreviousLocation(WorldMap map)
-    {
-        if (IsInBossFight)
-        {
-            _uiController?.ShowCannotGoBackDuringBossFight();
-            return;
-        }
-
-        if (map.PreviousLocation == null)
-        {
-            _uiController?.ShowCannotGoBack();
-            return;
-        }
-
-        var destination = map.PreviousLocation;
-        map.CurrentLocation = destination;
-        map.PreviousLocation = null;
-        _uiController?.ShowReturnToLocation(destination);
+        if (_actVictory.HasValue)
+            _uiController.ShowGameOver(_actVictory.Value);
     }
 
     private void HandleBossFight(Player player, Boss boss)
@@ -213,7 +199,17 @@ public class GameManager
         bool playerWon = player.Health > 0;
         IsInBossFight = false;
         _uiController?.ShowBattleResult(playerWon);
-        isRunning = !playerWon;
+
+        if (playerWon)
+        {
+            _actVictory = true;
+            isRunning = false;
+        }
+        else
+        {
+            _actVictory = false;
+            isRunning = false;
+        }
     }
 
     public void DealDamage(Boss boss, string partName, int baseDamage)
