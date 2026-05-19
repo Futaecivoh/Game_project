@@ -1,6 +1,6 @@
 public class BossBuilder
 {
-    private string _name;
+    private string _name = "";
     private int _health;
     private List<BossBodyPart> _parts = new List<BossBodyPart>();
 
@@ -26,4 +26,5 @@ public class BossBuilder
     {
         return new Boss(_name, _health, _parts);
     }
+    
 }

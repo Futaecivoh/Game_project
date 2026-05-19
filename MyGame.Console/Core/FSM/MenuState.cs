@@ -13,6 +13,6 @@ namespace MyGame.Console.Core.FSM
             }
         }
 
-        public void Update(GameContext context) { /* Логика меню */ }
+        public void Update(GameContext context) { }
     }
 }

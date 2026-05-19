@@ -10,7 +10,7 @@ public class MapBuilder
 
     public MapBuilder AddLocation(int id, string name, string type)
     {
-        _map.Locations[id] = new Location { Id = id, Name = name, Type = type };
+        _map.Locations[id] = LocationFactory.Create(id, name, type);
         return this;
     }
 
