@@ -15,6 +15,6 @@ namespace MyGame.Console.Core.FSM
             }
         }
 
-        public void Update(GameContext context) { /* Логика экрана смерти */ }
+        public void Update(GameContext context) { }
     }
 }

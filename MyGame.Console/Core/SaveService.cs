@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 public class SaveService
 {
     private readonly string _savePath;
@@ -14,14 +12,38 @@ public class SaveService
         Directory.CreateDirectory(Path.GetDirectoryName(_savePath)!);
     }
 
+    public bool IsImplemented => false;
 
-    public void SaveGame(Player player)
+    public bool SaveGame(Player player)
     {
-
+        _ = player;
+        Console.ForegroundColor = ConsoleColor.DarkYellow;
+        Console.WriteLine("⚠ Сохранение пока не реализовано (заглушка).");
+        Console.ResetColor();
+        return false;
     }
 
-    public void LoadGame(Player player)
+    public bool LoadGame(Player player)
     {
+        _ = player;
+        Console.ForegroundColor = ConsoleColor.DarkYellow;
+        Console.WriteLine("⚠ Загрузка пока не реализована (заглушка).");
+        Console.ResetColor();
+        return false;
+    }
 
+    public bool HasSaveFile()
+    {
+        return false;
+    }
+
+    public SaveData? ReadSaveDataStub()
+    {
+        return null;
+    }
+
+    public void WriteSaveDataStub(SaveData data)
+    {
+        _ = data;
     }
 }

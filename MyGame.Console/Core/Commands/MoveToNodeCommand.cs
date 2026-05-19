@@ -16,7 +16,7 @@ namespace MyGame.Console.Core.Commands
         public void Execute()
         {
             _previousNode = _map.CurrentLocation;
-            
+            _map.PreviousLocation = _previousNode;
             _map.CurrentLocation = _targetNode;
         }
 
@@ -24,6 +24,7 @@ namespace MyGame.Console.Core.Commands
         {
             if (_previousNode != null)
             {
+                _map.PreviousLocation = _map.CurrentLocation;
                 _map.CurrentLocation = _previousNode;
             }
         }

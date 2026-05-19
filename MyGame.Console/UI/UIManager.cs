@@ -193,6 +193,72 @@ public class UIManager
         DrawBottomBorder(boxWidth);
     }
 
+    public static void DrawMapTree(WorldMap map)
+    {
+        int boxWidth = 80;
+        Console.WriteLine();
+        DrawTopBorder("ДРЕВО КАРТЫ", boxWidth);
+
+        if (map.StartNode == null)
+        {
+            Console.Write(VERTICAL + " ");
+            Console.Write("Карта не задана.".PadRight(boxWidth - 4));
+            Console.WriteLine(" " + VERTICAL);
+            DrawBottomBorder(boxWidth);
+            return;
+        }
+
+        var visited = new HashSet<int>();
+        DrawMapTreeNode(map.StartNode, map.CurrentLocation, "", true, visited, boxWidth);
+
+        DrawBottomBorder(boxWidth);
+    }
+
+    private static void DrawMapTreeNode(
+        Location node,
+        Location? current,
+        string prefix,
+        bool isLast,
+        HashSet<int> visited,
+        int boxWidth)
+    {
+        string branch = isLast ? "└─ " : "├─ ";
+        string marker = node == current ? " ◄ вы здесь" : "";
+        string line = $"{prefix}{branch}[{node.Id}] {node.Name} ({node.Type}){marker}";
+
+        Console.Write(VERTICAL + " ");
+        if (node == current)
+            Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.Write(line.PadRight(boxWidth - 4));
+        if (node == current)
+            Console.ResetColor();
+        Console.WriteLine(" " + VERTICAL);
+
+        if (visited.Contains(node.Id))
+            return;
+
+        visited.Add(node.Id);
+
+        string childPrefix = prefix + (isLast ? "   " : "│  ");
+        var children = node.ConnectedLocations;
+        for (int i = 0; i < children.Count; i++)
+        {
+            var child = children[i];
+            if (visited.Contains(child.Id))
+            {
+                string refLine = $"{childPrefix}└─ [{child.Id}] {child.Name} (↩ уже в дереве)";
+                Console.Write(VERTICAL + " ");
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write(refLine.PadRight(boxWidth - 4));
+                Console.ResetColor();
+                Console.WriteLine(" " + VERTICAL);
+                continue;
+            }
+
+            DrawMapTreeNode(child, current, childPrefix, i == children.Count - 1, visited, boxWidth);
+        }
+    }
+
     public static void DrawBattleInterface(Player player, Boss boss)
     {
         Console.Clear();

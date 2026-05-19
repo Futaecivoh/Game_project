@@ -47,10 +47,31 @@ public class GameUIController
     public void ShowLocationChoice()
     {
         UIManager.DrawMap(_map);
+        UIManager.DrawMapTree(_map);
         Console.WriteLine("\nВыберите локацию:");
         Console.WriteLine("[0] - Выйти из игры");
+        if (_map.PreviousLocation != null)
+            Console.WriteLine("[8] - Вернуться в предыдущую локацию");
         Console.WriteLine("[9] - Отмена последнего шага");
         Console.Write("\nВаш выбор: ");
+    }
+
+    public void ShowCannotGoBackDuringBossFight()
+    {
+        UIManager.ShowMessage("БОЙ", "Во время боя с боссом нельзя покинуть локацию!", 55);
+    }
+
+    public void ShowCannotGoBack()
+    {
+        UIManager.ShowMessage("НАЗАД", "Некуда возвращаться — вы в начальной точке.", 55);
+    }
+
+    public void ShowReturnToLocation(Location location)
+    {
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine($">>> Вы вернулись в локацию: {location.Name} ({location.Type})");
+        Console.ResetColor();
     }
 
     public void ShowInvalidChoice()

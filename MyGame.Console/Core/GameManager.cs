@@ -39,6 +39,7 @@ public class GameManager
     }
     
     private bool isRunning = true;
+    public bool IsInBossFight { get; private set; }
     public CommandHistory GameHistory { get; private set; } = new CommandHistory();
 
     public void Run()
@@ -101,6 +102,11 @@ public class GameManager
                 isRunning = false;
                 break;
             }
+            else if (input == "8")
+            {
+                TryReturnToPreviousLocation(map);
+                continue;
+            }
             else if (input == "9")
             {
                 GameHistory.UndoLastCommand();
@@ -116,6 +122,7 @@ public class GameManager
                 GameHistory.ExecuteCommand(moveCmd);
 
                 _uiController.ShowLocationEnter(map.CurrentLocation);
+                map.CurrentLocation.Enter();
 
                 if (map.CurrentLocation.Type == "Boss" && map.CurrentLocation.Boss != null)
                 {
@@ -131,8 +138,29 @@ public class GameManager
         _uiController.ShowGameOver(false);
     }
 
+    private void TryReturnToPreviousLocation(WorldMap map)
+    {
+        if (IsInBossFight)
+        {
+            _uiController?.ShowCannotGoBackDuringBossFight();
+            return;
+        }
+
+        if (map.PreviousLocation == null)
+        {
+            _uiController?.ShowCannotGoBack();
+            return;
+        }
+
+        var destination = map.PreviousLocation;
+        map.CurrentLocation = destination;
+        map.PreviousLocation = null;
+        _uiController?.ShowReturnToLocation(destination);
+    }
+
     private void HandleBossFight(Player player, Boss boss)
     {
+        IsInBossFight = true;
         _uiController?.ShowBattleStart(boss);
 
         while (boss.Health > 0 && player.Health > 0)
@@ -183,6 +211,7 @@ public class GameManager
         }
        
         bool playerWon = player.Health > 0;
+        IsInBossFight = false;
         _uiController?.ShowBattleResult(playerWon);
         isRunning = !playerWon;
     }
