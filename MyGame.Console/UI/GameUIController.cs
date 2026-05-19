@@ -48,10 +48,9 @@ public class GameUIController
     {
         UIManager.DrawMap(_map);
         Console.WriteLine();
-        Console.WriteLine("[8] -> Сохранить игру");
-        Console.WriteLine("[7] -> Загрузить игру");
+        Console.WriteLine("[8] - Сохранить игру");
+        Console.WriteLine("[7] - Загрузить игру");
         Console.WriteLine("[0] - Выйти из игры");
-        Console.WriteLine("[9] - Отмена последнего шага");
         Console.Write("\nВаш выбор: ");
     }
 
