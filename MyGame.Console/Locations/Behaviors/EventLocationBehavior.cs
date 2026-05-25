@@ -4,7 +4,7 @@ public class EventLocationBehavior : ILocationBehavior
     {
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("✨ Вы находите древний алтарь! Ваше оружие начинает вибрировать...");
+        Console.WriteLine(" Вы находите древний алтарь! Ваше оружие начинает вибрировать...");
         Console.ResetColor();
         System.Threading.Thread.Sleep(1000);
 

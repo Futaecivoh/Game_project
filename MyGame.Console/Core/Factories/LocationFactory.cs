@@ -20,6 +20,7 @@ public static class LocationFactory
         LocationType.OneTimeEvent => new EventLocationBehavior(),
         LocationType.Boss => new BossLocationBehavior(),
         LocationType.Shop => new ShopLocationBehavior(),
+        
         _ => new StartLocationBehavior()
     };
 }
