@@ -182,7 +182,14 @@ public class GameManager
         }
 
         if (_actVictory.HasValue)
-            _uiController.ShowGameOver(_actVictory.Value);
+            {
+                _uiController.ShowGameOver(_actVictory.Value);
+
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.WriteLine("\nНажмите любую клавишу для выхода...");
+                Console.ResetColor();
+                Console.ReadKey(true);
+            }
     }
 
     private void HandleBossFight(Player player, Boss boss)
