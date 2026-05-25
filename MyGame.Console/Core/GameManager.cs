@@ -58,7 +58,7 @@ public class GameManager
             .AddLocation(2, "Засада врагов", LocationType.Enemy, 2)
             .AddLocation(3, "Лавка", LocationType.Shop, 2)
             
-            .AddLocation(4, "Артефакты", LocationType.Altar, 3)
+            .AddLocation(4, "Артефакты", LocationType.Event, 3)
             .AddLocation(5, "Кузница", LocationType.Forge, 3)
             .AddLocation(6, "Древний алтарь", LocationType.Forge, 3)
             .AddLocation(7, "Босс", LocationType.Boss, 4)
@@ -66,12 +66,12 @@ public class GameManager
             .Connect(1, 2)
             .Connect(2, 4)
             .Connect(2, 5)
-            .Connect(4, 6)
             .Connect(4, 7)
             .Connect(6, 7) 
 
             .Connect(1, 3) 
-            .Connect(3, 5) 
+            .Connect(3, 5)
+            .Connect(3, 6)
             .Connect(5, 7) 
 
             .SetStartLocation(1)
