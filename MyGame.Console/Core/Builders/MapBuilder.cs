@@ -1,6 +1,6 @@
 public class MapBuilder
 {
-    private WorldMap _map = new WorldMap();
+    private WorldMap _map = new WorldMap(); //
 
     public MapBuilder SetMapName(string name)
     {
@@ -8,9 +8,11 @@ public class MapBuilder
         return this;
     }
 
-    public MapBuilder AddLocation(int id, string name, string type)
+    public MapBuilder AddLocation(int id, string name, string type, int level = 0)
     {
-        _map.Locations[id] = LocationFactory.Create(id, name, type);
+        var location = LocationFactory.Create(id, name, type);
+        location.Level = level;
+        _map.Locations[id] = location;
         return this;
     }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class UIManager
 {
@@ -164,22 +165,61 @@ public class UIManager
 
     public static void DrawMap(WorldMap map)
     {
-        int boxWidth = 56;
+        int boxWidth = 74; 
         Console.WriteLine();
         DrawTopBorder(map.MapName ?? "Карта", boxWidth);
 
-        string locationName = map.CurrentLocation?.Name ?? "Неизвестно";
-        string hereLine = $"● {locationName}";
-        WriteBoxLine(boxWidth, hereLine.Length, () =>
+        var locationsByLevel = map.Locations.Values.GroupBy(l => l.Level).OrderByDescending(g => g.Key);
+        var travelOptions = map.GetTravelOptions();
+
+        foreach (var levelGroup in locationsByLevel)
         {
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.Write(hereLine);
-            Console.ResetColor();
-        });
+            var nodes = levelGroup.ToList();
+            
+            int totalTextLength = nodes.Sum(n => $"[{n.Name}]".Length);
+            int spacing = 6;
+            int totalContentWidth = totalTextLength + (nodes.Count - 1) * spacing;
+            
+            int inner = InnerWidth(boxWidth);
+            int leftPad = Math.Max(0, (inner - totalContentWidth) / 2);
+
+            WriteBoxLine(boxWidth, leftPad + totalContentWidth, () => 
+            {
+                Console.Write(new string(' ', leftPad));
+                for (int i = 0; i < nodes.Count; i++)
+                {
+                    var node = nodes[i];
+                    string text = $"[{node.Name}]";
+                    
+                    if (map.CurrentLocation?.Id == node.Id)
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                    else if (travelOptions.Any(o => o.Id == node.Id))
+                        Console.ForegroundColor = ConsoleColor.Green;
+                    else if (map.HasVisited(node))
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                    else
+                        Console.ForegroundColor = ConsoleColor.White;
+
+                    Console.Write(text);
+                    Console.ResetColor();
+
+                    if (i < nodes.Count - 1)
+                        Console.Write(new string(' ', spacing));
+                }
+            });
+        
+            if (levelGroup.Key > locationsByLevel.Last().Key) 
+            {
+                WriteBoxLine(boxWidth, "");
+            }
+        }
 
         DrawSeparator(boxWidth);
 
-        var travelOptions = map.GetTravelOptions();
+        string locationName = map.CurrentLocation?.Name ?? "Неизвестно";
+        WriteBoxLine(boxWidth, $"Вы находитесь: {locationName}");
+        DrawSeparator(boxWidth);
+
         if (travelOptions.Count == 0)
         {
             WriteBoxLine(boxWidth, "Дальше пути нет.");
@@ -189,9 +229,10 @@ public class UIManager
             for (int i = 0; i < travelOptions.Count; i++)
             {
                 var location = travelOptions[i];
-                bool isReturn = map.IsReturnPath(location);
+                
+                string arrow = location.Level <= map.CurrentLocation!.Level ? "← " : "→ ";
                 bool visited = map.HasVisited(location);
-                string arrow = isReturn ? "← " : "→ ";
+                
                 string optionText = $"{i + 1}) {arrow}{location.Name}";
                 WriteBoxLine(boxWidth, optionText.Length, () =>
                 {
@@ -199,16 +240,14 @@ public class UIManager
                     Console.Write($"{i + 1})");
                     Console.ResetColor();
                     Console.Write($" {arrow}");
+                    
                     if (visited)
-                    {
                         Console.ForegroundColor = ConsoleColor.DarkGray;
-                        Console.Write(location.Name);
-                        Console.ResetColor();
-                    }
                     else
-                    {
-                        Console.Write(location.Name);
-                    }
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        
+                    Console.Write(location.Name);
+                    Console.ResetColor();
                 });
             }
         }

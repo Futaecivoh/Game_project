@@ -35,18 +35,22 @@ public class WorldMap
         if (CurrentLocation == null)
             return options;
 
-        if (PreviousLocation != null && CanTravelTo(PreviousLocation))
-            options.Add(PreviousLocation);
+        foreach (var loc in Locations.Values)
+        {
+            if (loc.ConnectedLocations.Any(c => c.Id == CurrentLocation.Id))
+            {
+                if (CanTravelTo(loc) && !options.Any(o => o.Id == loc.Id))
+                    options.Add(loc);
+            }
+        }
 
         foreach (var next in CurrentLocation.ConnectedLocations)
         {
-            if (options.Any(o => o.Id == next.Id))
-                continue;
-            if (CanTravelTo(next))
+            if (CanTravelTo(next) && !options.Any(o => o.Id == next.Id))
                 options.Add(next);
         }
 
-        return options;
+        return options.OrderBy(o => o.Id).ToList();
     }
 
     public bool IsReturnPath(Location destination) =>
