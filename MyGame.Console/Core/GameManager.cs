@@ -53,18 +53,29 @@ public class GameManager
         MapBuilder builder = new MapBuilder();
         WorldMap map = builder
             .SetMapName("Акт 1: Темный лес")
-            .AddLocation(1, "Старт", LocationType.Start)
-            .AddLocation(2, "Засада врагов", LocationType.Enemy)
-            .AddLocation(3, "Артефакты", LocationType.OneTimeEvent)
-            .AddLocation(4, "Босс", LocationType.Boss)
-            .AddLocation(5, "Торговец", LocationType.Shop)
+            .AddLocation(1, "Старт", LocationType.Start, 1)
+            
+            .AddLocation(2, "Засада врагов", LocationType.Enemy, 2)
+            .AddLocation(3, "Лавка", LocationType.Shop, 2)
+            
+            .AddLocation(4, "Артефакты", LocationType.Event, 3)
+            .AddLocation(5, "Кузница", LocationType.Forge, 3)
+            .AddLocation(6, "Древний алтарь", LocationType.Forge, 3)
+            .AddLocation(7, "Босс", LocationType.Boss, 4)
+            
             .Connect(1, 2)
-            .Connect(1, 3)
             .Connect(2, 4)
-            .Connect(3, 4)
-            .Connect(1, 5)
+            .Connect(2, 5)
+            .Connect(4, 7)
+            .Connect(6, 7) 
+
+            .Connect(1, 3) 
+            .Connect(3, 5)
+            .Connect(3, 6)
+            .Connect(5, 7) 
+
             .SetStartLocation(1)
-            .Build();
+            .Build(); 
 
         Boss boss = new BossBuilder()
             .SetName("Dragon")
@@ -102,6 +113,7 @@ public class GameManager
 
         while (isRunning)
         {
+            UIManager.ClearScreen();
             _uiController.ShowLocationChoice();
             
             string? input = Console.ReadLine();
@@ -156,11 +168,13 @@ public class GameManager
                 if (choice > 0 && choice <= travelOptions.Count)
                 {
                     var chosenLocation = travelOptions[choice - 1];
-                    bool isReturn = map.IsReturnPath(chosenLocation);
+                    
+                    bool isReturn = chosenLocation.Level <= map.CurrentLocation!.Level;
 
                     ICommand moveCmd = new MoveToNodeCommand(map, chosenLocation);
                     GameHistory.ExecuteCommand(moveCmd);
 
+                    UIManager.ClearScreen();
                     _uiController.ShowLocationEnter(map.CurrentLocation!, isReturn);
                     map.CurrentLocation!.Enter();
                     map.RecordVisit(map.CurrentLocation);
@@ -169,15 +183,25 @@ public class GameManager
                     {
                         HandleBossFight(MainPlayer, map.CurrentLocation.Boss);
                     }
+                    else
+                    {
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.WriteLine("Нажмите любую клавишу, чтобы вернуться к карте...");
+                        Console.ResetColor();
+                        Console.ReadKey();
+                    }
                 }
                 else
                 {
                     _uiController.ShowInvalidChoice();
+                    Thread.Sleep(1000);
                 }
             }
             else
             {
                 _uiController.ShowInvalidChoice();
+                Thread.Sleep(1000);
             }
         }
 

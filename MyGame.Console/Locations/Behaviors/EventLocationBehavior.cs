@@ -2,11 +2,12 @@ public class EventLocationBehavior : ILocationBehavior
 {
     public void OnEnter(Location location, Player player)
     {
+
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("✨ Вы находите древний алтарь! Ваше оружие начинает вибрировать...");
+        Console.WriteLine(" Вы находите древний алтарь! Ваше оружие начинает вибрировать...");
         Console.ResetColor();
-        System.Threading.Thread.Sleep(1000);
+        Thread.Sleep(1000);
 
         int roll = RNJesus.Range(GameBalance.RNJesusRangeMin, GameBalance.RNJesusRangeMax);
 
@@ -32,7 +33,9 @@ public class EventLocationBehavior : ILocationBehavior
             Console.WriteLine($"   Урон увеличен с {oldWeapon.GetDamage()} до {player.EquippedWeapon.GetDamage()}");
             Console.ResetColor();
         }
-
-        System.Threading.Thread.Sleep(1200);
+        
+        Console.WriteLine("\nНажмите любую клавишу, чтобы забрать артефакт и продолжить путь...");
+        Console.ReadKey();
+        Thread.Sleep(1200);
     }
 }
